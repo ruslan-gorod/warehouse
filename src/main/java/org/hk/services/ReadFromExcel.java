@@ -18,15 +18,13 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.hk.util.Helper.DELIMITER;
-import static org.hk.util.Helper.deleteFile;
-import static org.hk.util.Helper.DIR;
 import static org.hk.util.Helper.RAH_25;
 import static org.hk.util.Helper.RAH_26;
 import static org.hk.util.Helper.RAH_36;
 import static org.hk.util.Helper.RAH_704;
 import static org.hk.util.Helper.RAH_901;
-import static org.hk.util.Helper.round;
 import static org.hk.util.Helper.WAREHOUSE;
+import static org.hk.util.Helper.round;
 
 
 public class ReadFromExcel {
@@ -56,11 +54,6 @@ public class ReadFromExcel {
 
     private static void processFile(File file) {
         String fileName = file.getName();
-        if (file.isDirectory() && fileName.equals(DIR)) {
-            deleteFile(file);
-            File saveDir = new File("./" + DIR);
-            saveDir.mkdir();
-        }
         if (fileName.contains("start_count")) {
             initialize(file, true);
             return;

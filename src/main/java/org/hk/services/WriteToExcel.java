@@ -27,18 +27,24 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 import static org.hk.util.Helper.DELIMITER;
-import static org.hk.util.Helper.deleteFile;
 import static org.hk.util.Helper.DIR;
-import static org.hk.util.Helper.getListRecordsMinusZal;
-import static org.hk.util.Helper.getMonthsNames;
+import static org.hk.util.Helper.DIR_YEARS;
 import static org.hk.util.Helper.RAH_25;
 import static org.hk.util.Helper.RAH_26;
+import static org.hk.util.Helper.deleteFile;
+import static org.hk.util.Helper.getListRecordsMinusZal;
+import static org.hk.util.Helper.getMonthsNames;
+import static org.hk.util.Helper.isReportByYears;
 import static org.hk.util.Helper.round;
 
 public class WriteToExcel {
 
     public static void write(Set<String> products) {
-        deleteFile(new File(DIR));
+        if (isReportByYears) {
+            deleteFile(new File(DIR_YEARS));
+        } else {
+            deleteFile(new File(DIR));
+        }
 
         LocalDate startDate = WorkWithDB.getDateFromDB("MIN");
         LocalDate endDate = WorkWithDB.getDateFromDB("MAX");
@@ -47,8 +53,7 @@ public class WriteToExcel {
     }
 
     private static void saveProductReport(LocalDate startDate, LocalDate endDate, String product) {
-        Double result = ReadFromExcel.getStartCount().get(product);
-        Operation operation = new Operation(0.0, 0.0, result != null ? result : 0.0);
+        Operation operation = createOperation(product);
         for (int year = startDate.getYear(); year <= endDate.getYear(); year++) {
             int startMonth = year == startDate.getYear() ? startDate.getMonthValue() : 1;
             int endMonth = year == endDate.getYear() ? endDate.getMonthValue() : 12;
@@ -63,26 +68,54 @@ public class WriteToExcel {
         }
     }
 
+    private static Operation createOperation(String product) {
+        Double result = ReadFromExcel.getStartCount().get(product);
+        return new Operation(0.0, 0.0, result != null ? result : 0.0);
+    }
+
     private static void createAndSaveFile(int year, int month, String product, Operation operation, Session session) {
-        String folderName = DIR + "/" + product.replace("/", " ")
-                .replace(" ", "_") + "/" + year;
         try {
-            File folder = new File(folderName);
-            if (!folder.exists()) {
-                folder.mkdirs();
-            }
-            File report = new File(folderName + "/" + month + ".xlsx");
+            File report = isReportByYears ?
+                    getFileReportToSaveByYears(year, month, product) :
+                    getFileReportToSave(year, month, product);
             FileOutputStream fos = new FileOutputStream(report);
-            XSSFWorkbook workbook = new XSSFWorkbook();
+            saveReportToExcel(year, month, product, operation, session, fos);
+            fos.flush();
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void saveReportToExcel(int year, int month, String product, Operation operation,
+                                          Session session, FileOutputStream fos) throws IOException {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             XSSFSheet sheet = workbook.createSheet(DIR);
             createReportHeader(sheet, product, month, year, operation);
             int rowNumber = addRowsToReport(sheet, product, month, year, operation, session);
             createReportFooter(rowNumber, sheet, operation);
             workbook.write(fos);
-            fos.flush();
-            fos.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        }
+    }
+
+    private static File getFileReportToSave(int year, int month, String product) {
+        String folderName = DIR + "/" + product.replace("/", " ")
+                .replace(" ", "_") + "/" + year;
+        createReportFolder(folderName);
+        return new File(folderName + "/" + month + ".xlsx");
+    }
+
+    private static File getFileReportToSaveByYears(int year, int month, String product) {
+        String folderName = DIR_YEARS + "/" + year + "/" + month;
+        String fileName = product.replace("/", " ").replace(" ", "_");
+        createReportFolder(folderName);
+        return new File(folderName + "/" + fileName + ".xlsx");
+    }
+
+    private static void createReportFolder(String folderName) {
+        File folder = new File(folderName);
+        if (!folder.exists()) {
+            folder.mkdirs();
         }
     }
 
