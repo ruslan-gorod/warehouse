@@ -1,5 +1,6 @@
 package org.hk;
 
+import org.hk.dao.WorkWithDB;
 import org.hk.models.HkRecord;
 import org.hk.services.ReadFromExcel;
 import org.hk.services.WriteToExcel;
@@ -16,7 +17,7 @@ public class App {
         System.out.println("records.size = " + records.size());
         Set<String> products = ReadFromExcel.getProductValues();
         System.out.println("products.size =" + products.size());
-//        WorkWithDB.writeRecords(records);
+        WorkWithDB.writeRecords(records);
 
         WriteToExcel.write(products);
 

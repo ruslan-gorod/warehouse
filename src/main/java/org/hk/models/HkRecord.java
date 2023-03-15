@@ -41,13 +41,13 @@ public class HkRecord {
     private double count;
     @Column(name = "sum")
     private double sum;
-    @Column(name = "warehousefrom")
+    @Column(name = "warehouseFrom")
     private String warehouseFrom;
-    @Column(name = "warehouseto")
+    @Column(name = "warehouseTo")
     private String warehouseTo;
     @Column(name = "product")
     private String product;
-    @Column(name = "isbladder")
+    @Column(name = "isBladder")
     private boolean isBladder;
     @Column(name = "content1")
     private String content1;

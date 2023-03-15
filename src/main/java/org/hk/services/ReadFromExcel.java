@@ -106,7 +106,7 @@ public class ReadFromExcel {
 
         String dt = record.getDt();
         String kt = record.getKt();
-        if ((rah26.equals(dt) || rah26.equals(kt))) {
+        if ((rah26.equals(dt) || rah26.equals(kt)) && record.getCount() != 0) {
             if (rah26.equals(kt)) {
                 record.setDateTime(record.getDateTime().plusSeconds(10));
             }

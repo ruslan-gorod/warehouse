@@ -36,18 +36,20 @@ public class WriteToExcel {
 
         LocalDate startDate = WorkWithDB.getDateFromDB("MIN");
         LocalDate endDate = WorkWithDB.getDateFromDB("MAX");
-        for (String product : products) {
-            Double result = ReadFromExcel.getStartCount().get(product);
-            Operation operation = new Operation(0.0, 0.0, result != null ? result : 0.0);
-            for (int year = startDate.getYear(); year <= endDate.getYear(); year++) {
-                int startMonth = year == startDate.getYear() ? startDate.getMonthValue() : 1;
-                int endMonth = year == endDate.getYear() ? endDate.getMonthValue() : 12;
-                for (int month = startMonth; month <= endMonth; month++) {
-                    try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-                        createAndSaveFile(year, month, product, operation, session);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+        products.parallelStream().forEach(product -> saveProductReport(startDate, endDate, product));
+    }
+
+    private static void saveProductReport(LocalDate startDate, LocalDate endDate, String product) {
+        Double result = ReadFromExcel.getStartCount().get(product);
+        Operation operation = new Operation(0.0, 0.0, result != null ? result : 0.0);
+        for (int year = startDate.getYear(); year <= endDate.getYear(); year++) {
+            int startMonth = year == startDate.getYear() ? startDate.getMonthValue() : 1;
+            int endMonth = year == endDate.getYear() ? endDate.getMonthValue() : 12;
+            for (int month = startMonth; month <= endMonth; month++) {
+                try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+                    createAndSaveFile(year, month, product, operation, session);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -112,10 +114,9 @@ public class WriteToExcel {
         styleCenter30.setFont(font30);
         cell30.setCellStyle(styleCenter30);
 
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 7));
-        sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 7));
-        sheet.addMergedRegion(new CellRangeAddress(2, 2, 0, 7));
-        sheet.addMergedRegion(new CellRangeAddress(3, 3, 0, 7));
+        for (int i = 0; i < 4; i++) {
+            sheet.addMergedRegion(new CellRangeAddress(i, i, 0, 7));
+        }
 
         Row row5 = sheet.createRow(5);
         Cell cell50 = row5.createCell(0);
@@ -176,7 +177,7 @@ public class WriteToExcel {
 
             CellStyle style = getCellStyle(cellNumberOfRow);
 
-            cellNumberOfRow.setCellValue(num-7);
+            cellNumberOfRow.setCellValue(num - 7);
             cellNumberOfRow.setCellStyle(style);
             num++;
             Cell cellDate = row.createCell(1);
@@ -241,7 +242,7 @@ public class WriteToExcel {
             cellPrymitka.setCellStyle(style);
             operation.setResult(zal);
         }
-        return num + 9;
+        return num + 1;
     }
 
     private static void createReportFooter(int rowNumber, XSSFSheet sheet, Operation operation) {
@@ -262,7 +263,8 @@ public class WriteToExcel {
         Cell cell5 = rowSum.createCell(5);
         cell4.setCellValue(Helper.round(operation.getIn(), 2));
         cell5.setCellValue(Helper.round(operation.getOut(), 2));
-
+        operation.setIn(0.0);
+        operation.setOut(0.0);
         for (int j = 1; j < 8; j++) {
             sheet.autoSizeColumn(j);
         }

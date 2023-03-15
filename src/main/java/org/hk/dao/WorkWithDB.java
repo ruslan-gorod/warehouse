@@ -45,9 +45,9 @@ public class WorkWithDB {
     public static List<HkRecord> getReportFromDb(Session session, int month, int year, String product) {
         Query query = session.createQuery(
                 "FROM HkRecord r WHERE EXTRACT(MONTH FROM r.date) = :month " +
-                "AND EXTRACT(YEAR FROM r.date) = :year " +
-                "AND r.product LIKE :product " +
-                "ORDER BY r.dateTime");
+                        "AND EXTRACT(YEAR FROM r.date) = :year " +
+                        "AND r.product LIKE :product " +
+                        "ORDER BY r.dateTime");
         query.setParameter("month", month);
         query.setParameter("year", year);
         query.setParameter("product", product);
