@@ -27,30 +27,30 @@ public class HkRecord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
-    @Column
+    @Column(name = "dt")
     private String dt;
-    @Column
+    @Column(name = "kt")
     private String kt;
-    @Column
+    @Column(name = "doc")
     private String doc;
-    @Column
+    @Column(name = "date")
     private LocalDate date;
-    @Column
+    @Column(name = "datetime")
     private LocalDateTime dateTime;
-    @Column
+    @Column(name = "count")
     private double count;
-    @Column
+    @Column(name = "sum")
     private double sum;
-    @Column
+    @Column(name = "warehousefrom")
     private String warehouseFrom;
-    @Column
+    @Column(name = "warehouseto")
     private String warehouseTo;
-    @Column
+    @Column(name = "product")
     private String product;
-    @Column
+    @Column(name = "isbladder")
     private boolean isBladder;
-    @Column
+    @Column(name = "content1")
     private String content1;
-    @Column
+    @Column(name = "content4")
     private String content4;
 }

@@ -6,12 +6,13 @@ import org.hibernate.query.Query;
 import org.hk.models.HkRecord;
 import org.hk.util.HibernateUtil;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public class WorkWithDB {
     public static void writeRecords(List<HkRecord> records) {
-        Transaction transaction = null;
         for (HkRecord record : records) {
+            Transaction transaction = null;
             try (Session session = HibernateUtil.getSessionFactory().openSession()) {
                 transaction = session.beginTransaction();
                 session.save(record);
@@ -25,22 +26,33 @@ public class WorkWithDB {
         }
     }
 
-    public static int getYearFromDB(String value) {
-        int year = 0;
-        Transaction transaction = null;
+    public static LocalDate getDateFromDB(String value) {
+        LocalDate date = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Query query = session.createQuery("SELECT " + value + "(EXTRACT(YEAR FROM date)) FROM record");
-            List results = query.list();
+            session.setDefaultReadOnly(true);
+            String query = "SELECT " + value + "(r.date) FROM HkRecord r";
+            List results = session.createQuery(query).list();
 
             if (results != null && !results.isEmpty()) {
-                year = ((Number) results.get(0)).intValue();
+                date = (LocalDate) results.get(0);
             }
         } catch (Exception e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
             e.printStackTrace();
         }
-        return year;
+        return date;
+    }
+
+    public static List<HkRecord> getReportFromDb(Session session, int month, int year, String product) {
+        Query query = session.createQuery(
+                "FROM HkRecord r WHERE EXTRACT(MONTH FROM r.date) = :month " +
+                "AND EXTRACT(YEAR FROM r.date) = :year " +
+                "AND r.product LIKE :product " +
+                "ORDER BY r.dateTime");
+        query.setParameter("month", month);
+        query.setParameter("year", year);
+        query.setParameter("product", product);
+
+        return query.list();
+
     }
 }

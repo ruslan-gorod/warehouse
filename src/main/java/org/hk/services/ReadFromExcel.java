@@ -49,6 +49,14 @@ public class ReadFromExcel {
         return products;
     }
 
+    public static Map<String, Double> getStartCount() {
+        return startCount;
+    }
+
+    public static Map<String, String> getDocRecordMap() {
+        return docRecordMap;
+    }
+
     private static void processFile(File file) {
         String fileName = file.getName();
         if (file.isDirectory() && fileName.equals(dir)) {
@@ -103,7 +111,9 @@ public class ReadFromExcel {
                 record.setDateTime(record.getDateTime().plusSeconds(10));
             }
             records.add(record);
-            products.add(record.getProduct());
+            if (record.getProduct() != null) {
+                products.add(record.getProduct());
+            }
         }
         createDocRecordMap(record, dt, kt);
     }
@@ -137,10 +147,14 @@ public class ReadFromExcel {
         boolean isBladder = checkIsBladder(arr);
 
         return HkRecord.builder().doc(r.getCell(1).getStringCellValue())
-                .date(date).dt(dt).kt(kt).count(count).sum(sum).isBladder(isBladder)
+                .date(date).dateTime(date.atTime(0, 0))
                 .warehouseFrom(warehouseFrom).warehouseTo(warehouseTo)
                 .product(getProductFromRow(arr, isBladder, dt, kt))
-                .content1(arr[1]).content4(arr.length > 5 ? arr[4] : null)
+                .content1(arr.length > 1 ? arr[1] : null)
+                .content4(arr.length > 5 ? arr[4] : null)
+                .dt(dt).kt(kt)
+                .count(count).sum(sum)
+                .isBladder(isBladder)
                 .build();
     }
 
@@ -150,15 +164,13 @@ public class ReadFromExcel {
 
     private static String getProductFromRow(String[] arr, boolean isBladder, String dt, String kt) {
         String product = null;
-        boolean firstRowWarehouse = warehouse.equals(arr[1]);
-        boolean fourthRowWarehouse = warehouse.equals(arr[4]);
-        if (rah26.equals(dt) && firstRowWarehouse && !rah26.equals(kt)) {
+        if (rah26.equals(dt) && !rah26.equals(kt) && warehouse.equals(arr[1])) {
             product = arr[2];
         }
         if (rah26.equals(kt)) {
-            if ((rah901.equals(dt) || (rah25.equals(dt) && isBladder)) && fourthRowWarehouse) {
+            if ((rah901.equals(dt) || (rah25.equals(dt) && isBladder)) && warehouse.equals(arr[4])) {
                 product = arr[5];
-            } else if (rah26.equals(dt) && (fourthRowWarehouse || firstRowWarehouse)) {
+            } else if (rah26.equals(dt) && (warehouse.equals(arr[4]) || warehouse.equals(arr[1]))) {
                 if (!arr[2].equals(arr[5])) {
                     product = arr[2];
                 } else {

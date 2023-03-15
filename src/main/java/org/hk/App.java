@@ -1,24 +1,26 @@
 package org.hk;
 
+import org.hk.models.HkRecord;
+import org.hk.services.ReadFromExcel;
+import org.hk.services.WriteToExcel;
+import org.hk.util.Helper;
 
-import org.hk.dao.WorkWithDB;
+import java.util.List;
+import java.util.Set;
 
 public class App {
     public static void main(String[] args) {
-        System.out.println(WorkWithDB.getYearFromDB("MIN"));
-        System.out.println(WorkWithDB.getYearFromDB("MAX"));
-//        Helper.initMonthNames();
-//
-//        List<HkRecord> records = ReadFromExcel.read();
-//        System.out.println("records.size =" + records.size());
+        Helper.initMonthNames();
+
+        List<HkRecord> records = ReadFromExcel.read();
+        System.out.println("records.size = " + records.size());
+        Set<String> products = ReadFromExcel.getProductValues();
+        System.out.println("products.size =" + products.size());
 //        WorkWithDB.writeRecords(records);
-//
-//        Set<String> products = ReadFromExcel.getProductValues();
-//        System.out.println("products.size =" + products.size());
-//
-//        WriteToExcel.write(products);
-//
-//        System.out.println("Completed");
-//        System.exit(0);
+
+        WriteToExcel.write(products);
+
+        System.out.println("Completed");
+        System.exit(0);
     }
 }

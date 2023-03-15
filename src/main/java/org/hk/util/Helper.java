@@ -1,7 +1,11 @@
 package org.hk.util;
 
+import org.hk.models.HkRecord;
+
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -15,6 +19,7 @@ public class Helper {
     public static final String rah704 = "704";
     public static final String rah901 = "901";
     public static final String warehouse = "Склад готової продукції Х";
+    private static final List<HkRecord> listRecordsMinusZal = new ArrayList<>();
 
     public static void initMonthNames() {
         monthsNames.put(1, "січень");
@@ -36,7 +41,7 @@ public class Helper {
     }
 
     public static void deleteFile(File element) {
-        if (element.isDirectory()) {
+        if (element.exists() && element.isDirectory()) {
             for (File sub : Objects.requireNonNull(element.listFiles())) {
                 deleteFile(sub);
             }
@@ -51,5 +56,9 @@ public class Helper {
         value = value * factor;
         long tmp = Math.round(value);
         return (double) tmp / factor;
+    }
+
+    public static List<HkRecord> getListRecordsMinusZal() {
+        return listRecordsMinusZal;
     }
 }
