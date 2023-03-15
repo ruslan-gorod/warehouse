@@ -4,6 +4,7 @@ import org.hk.models.HkRecord;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,13 +13,13 @@ import java.util.Objects;
 public class Helper {
     private static final Map<Integer, String> monthsNames = new HashMap<>();
     public static final String DELIMITER = "|";
-    public static final String dir = "reports";
-    public static final String rah25 = "25";
-    public static final String rah26 = "26";
-    public static final String rah36 = "36";
-    public static final String rah704 = "704";
-    public static final String rah901 = "901";
-    public static final String warehouse = "Склад готової продукції Х";
+    public static final String DIR = "reports";
+    public static final String RAH_25 = "25";
+    public static final String RAH_26 = "26";
+    public static final String RAH_36 = "36";
+    public static final String RAH_704 = "704";
+    public static final String RAH_901 = "901";
+    public static final String WAREHOUSE = "Склад готової продукції Х";
     private static final List<HkRecord> listRecordsMinusZal = new ArrayList<>();
 
     public static void initMonthNames() {
@@ -42,9 +43,7 @@ public class Helper {
 
     public static void deleteFile(File element) {
         if (element.exists() && element.isDirectory()) {
-            for (File sub : Objects.requireNonNull(element.listFiles())) {
-                deleteFile(sub);
-            }
+            Arrays.stream(Objects.requireNonNull(element.listFiles())).forEach(Helper::deleteFile);
         }
         element.delete();
     }

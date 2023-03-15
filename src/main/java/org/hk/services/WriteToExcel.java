@@ -15,7 +15,6 @@ import org.hibernate.Session;
 import org.hk.dao.WorkWithDB;
 import org.hk.models.HkRecord;
 import org.hk.models.Operation;
-import org.hk.util.Helper;
 import org.hk.util.HibernateUtil;
 
 import java.io.File;
@@ -25,17 +24,25 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.IntStream;
 
-import static org.hk.util.Helper.rah25;
-import static org.hk.util.Helper.rah26;
+import static org.hk.util.Helper.DELIMITER;
+import static org.hk.util.Helper.deleteFile;
+import static org.hk.util.Helper.DIR;
+import static org.hk.util.Helper.getListRecordsMinusZal;
+import static org.hk.util.Helper.getMonthsNames;
+import static org.hk.util.Helper.RAH_25;
+import static org.hk.util.Helper.RAH_26;
+import static org.hk.util.Helper.round;
 
 public class WriteToExcel {
 
     public static void write(Set<String> products) {
-        Helper.deleteFile(new File(Helper.dir));
+        deleteFile(new File(DIR));
 
         LocalDate startDate = WorkWithDB.getDateFromDB("MIN");
         LocalDate endDate = WorkWithDB.getDateFromDB("MAX");
+
         products.parallelStream().forEach(product -> saveProductReport(startDate, endDate, product));
     }
 
@@ -45,6 +52,7 @@ public class WriteToExcel {
         for (int year = startDate.getYear(); year <= endDate.getYear(); year++) {
             int startMonth = year == startDate.getYear() ? startDate.getMonthValue() : 1;
             int endMonth = year == endDate.getYear() ? endDate.getMonthValue() : 12;
+
             for (int month = startMonth; month <= endMonth; month++) {
                 try (Session session = HibernateUtil.getSessionFactory().openSession()) {
                     createAndSaveFile(year, month, product, operation, session);
@@ -56,8 +64,7 @@ public class WriteToExcel {
     }
 
     private static void createAndSaveFile(int year, int month, String product, Operation operation, Session session) {
-        String folderName = Helper.dir + "/" + product.replace("/", " ")
-//                .replace("  ", " ")
+        String folderName = DIR + "/" + product.replace("/", " ")
                 .replace(" ", "_") + "/" + year;
         try {
             File folder = new File(folderName);
@@ -67,7 +74,7 @@ public class WriteToExcel {
             File report = new File(folderName + "/" + month + ".xlsx");
             FileOutputStream fos = new FileOutputStream(report);
             XSSFWorkbook workbook = new XSSFWorkbook();
-            XSSFSheet sheet = workbook.createSheet(Helper.dir);
+            XSSFSheet sheet = workbook.createSheet(DIR);
             createReportHeader(sheet, product, month, year, operation);
             int rowNumber = addRowsToReport(sheet, product, month, year, operation, session);
             createReportFooter(rowNumber, sheet, operation);
@@ -106,7 +113,7 @@ public class WriteToExcel {
 
         Row row3 = sheet.createRow(3);
         Cell cell30 = row3.createCell(0);
-        cell30.setCellValue("за " + Helper.getMonthsNames().get(month) + " " + year + "р.");
+        cell30.setCellValue("за " + getMonthsNames().get(month) + " " + year + "р.");
         CellStyle styleCenter30 = cell30.getSheet().getWorkbook().createCellStyle();
         setCenterInStyle(styleCenter30);
         Font font30 = cell30.getSheet().getWorkbook().createFont();
@@ -114,14 +121,14 @@ public class WriteToExcel {
         styleCenter30.setFont(font30);
         cell30.setCellStyle(styleCenter30);
 
-        for (int i = 0; i < 4; i++) {
-            sheet.addMergedRegion(new CellRangeAddress(i, i, 0, 7));
-        }
+        IntStream.range(0, 4)
+                .mapToObj(i -> new CellRangeAddress(i, i, 0, 7))
+                .forEach(sheet::addMergedRegion);
 
         Row row5 = sheet.createRow(5);
         Cell cell50 = row5.createCell(0);
 
-        cell50.setCellValue("Сальдо на початок: " + Helper.round(operation.getResult(), 2));
+        cell50.setCellValue("Сальдо на початок: " + round(operation.getResult(), 2));
 
         Row row6 = sheet.createRow(6);
         Cell cell60 = row6.createCell(0);
@@ -172,74 +179,77 @@ public class WriteToExcel {
             String dt = record.getDt();
             String kt = record.getKt();
             double count = record.getCount();
+
             Row row = sheet.createRow(num);
+
             Cell cellNumberOfRow = row.createCell(0);
-
             CellStyle style = getCellStyle(cellNumberOfRow);
-
-            cellNumberOfRow.setCellValue(num - 7);
             cellNumberOfRow.setCellStyle(style);
+            cellNumberOfRow.setCellValue(num - 7);
             num++;
+
             Cell cellDate = row.createCell(1);
             cellDate.setCellValue(record.getDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
             cellDate.setCellStyle(style);
+
             Cell cellDocWithNumber = row.createCell(2);
             cellDocWithNumber.setCellValue(getDocName(record));
             cellDocWithNumber.setCellStyle(style);
+
             Cell cellPartner = row.createCell(3);
             cellPartner.setCellValue(getPartnerForOrder(record));
             cellPartner.setCellStyle(style);
 
-            Cell cellPryhid = row.createCell(4);
+            Cell cellIn = row.createCell(4);
             double zal = operation.getResult();
-            if (rah26.equals(dt) && !rah26.equals(kt)) {
-                cellPryhid.setCellValue(count);
-                zal += Helper.round(count, 2);
+            if (RAH_26.equals(dt) && !RAH_26.equals(kt)) {
+                cellIn.setCellValue(count);
+                zal += round(count, 2);
                 operation.setIn(operation.getIn() + count);
             }
-            cellPryhid.setCellStyle(style);
+            cellIn.setCellStyle(style);
 
-            Cell cellRozhid = row.createCell(5);
-            if (rah26.equals(kt) && !rah26.equals(dt) && !rah25.equals(dt)) {
+            Cell cellOut = row.createCell(5);
+            if (RAH_26.equals(kt) && !RAH_26.equals(dt) && !RAH_25.equals(dt)) {
                 if (count < 0) {
                     count = count * (-1);
-                    cellPryhid.setCellValue(count);
-                    zal += Helper.round(count, 2);
+                    cellIn.setCellValue(count);
+                    zal += round(count, 2);
                     operation.setIn(operation.getIn() + count);
                 } else {
-                    cellRozhid.setCellValue(count);
-                    zal -= Helper.round(count, 2);
+                    cellOut.setCellValue(count);
+                    zal -= round(count, 2);
                     operation.setOut(operation.getOut() + count);
                 }
             }
-            if (rah25.equals(dt) && rah26.equals(kt) && record.isBladder()) {
-                cellRozhid.setCellValue(count);
-                zal -= Helper.round(count, 2);
+            if (RAH_25.equals(dt) && RAH_26.equals(kt) && record.isBladder()) {
+                cellOut.setCellValue(count);
+                zal -= round(count, 2);
                 operation.setOut(operation.getOut() + count);
             }
-            if (rah26.equals(dt) && rah26.equals(kt)) {
+            if (RAH_26.equals(dt) && RAH_26.equals(kt)) {
                 if (record.getWarehouseFrom() != null) {
-                    cellPryhid.setCellValue(count);
-                    zal += Helper.round(count, 2);
+                    cellIn.setCellValue(count);
+                    zal += round(count, 2);
                     operation.setIn(operation.getIn() + count);
                 } else if (record.getWarehouseTo() != null) {
-                    cellRozhid.setCellValue(count);
-                    zal -= Helper.round(count, 2);
+                    cellOut.setCellValue(count);
+                    zal -= round(count, 2);
                     operation.setOut(operation.getOut() + count);
                 }
             }
-            cellRozhid.setCellStyle(style);
+            cellOut.setCellStyle(style);
 
             if (zal < 0) {
-                Helper.getListRecordsMinusZal().add(record);
+                getListRecordsMinusZal().add(record);
             }
 
-            Cell cellZalyshok = row.createCell(6);
-            cellZalyshok.setCellValue(zal);
-            cellZalyshok.setCellStyle(style);
+            Cell cellTotal = row.createCell(6);
+            cellTotal.setCellValue(zal);
+            cellTotal.setCellStyle(style);
 
-            Cell cellPrymitka = row.createCell(7);
-            cellPrymitka.setCellStyle(style);
+            Cell cellNote = row.createCell(7);
+            cellNote.setCellStyle(style);
             operation.setResult(zal);
         }
         return num + 1;
@@ -248,26 +258,24 @@ public class WriteToExcel {
     private static void createReportFooter(int rowNumber, XSSFSheet sheet, Operation operation) {
         Row row = sheet.createRow(rowNumber);
         Cell cell0 = row.createCell(0);
-        cell0.setCellValue("Сальдо на кінець: " + Helper.round(operation.getResult(), 2));
+        cell0.setCellValue("Сальдо на кінець: " + round(operation.getResult(), 2));
 
-        Row rowSklav = sheet.createRow(rowNumber + 2);
-        Cell cellSklav = rowSklav.createCell(0);
-        cellSklav.setCellValue("Склав                            _________________           Кич Я.С.");
+        Row rowPrepared = sheet.createRow(rowNumber + 2);
+        Cell preparedCell = rowPrepared.createCell(0);
+        preparedCell.setCellValue("Склав                            _________________           Кич Я.С.");
 
-        Row rowPereviryv = sheet.createRow(rowNumber + 4);
-        Cell cellPereviryv = rowPereviryv.createCell(0);
-        cellPereviryv.setCellValue("Перевірив                    _________________           Дунас Н.М.");
+        Row rowReview = sheet.createRow(rowNumber + 4);
+        Cell reviewCell = rowReview.createCell(0);
+        reviewCell.setCellValue("Перевірив                    _________________           Дунас Н.М.");
 
         Row rowSum = sheet.createRow(rowNumber - 1);
         Cell cell4 = rowSum.createCell(4);
         Cell cell5 = rowSum.createCell(5);
-        cell4.setCellValue(Helper.round(operation.getIn(), 2));
-        cell5.setCellValue(Helper.round(operation.getOut(), 2));
+        cell4.setCellValue(round(operation.getIn(), 2));
+        cell5.setCellValue(round(operation.getOut(), 2));
         operation.setIn(0.0);
         operation.setOut(0.0);
-        for (int j = 1; j < 8; j++) {
-            sheet.autoSizeColumn(j);
-        }
+        IntStream.range(1, 8).forEach(sheet::autoSizeColumn);
 
         sheet.getPrintSetup().setLandscape(true);
         sheet.setFitToPage(true);
@@ -290,16 +298,16 @@ public class WriteToExcel {
         style.setVerticalAlignment(VerticalAlignment.CENTER);
     }
 
-    private static String getDocName(HkRecord r) {
-        return r.getDoc().replace("Кальк.", "Акт")
+    private static String getDocName(HkRecord record) {
+        return record.getDoc().replace("Кальк.", "Акт")
                 .replace("Перемещение", "Переміщення")
                 .replace("Расх. накл.", "Видаткова накладна");
     }
 
-    private static String getPartnerForOrder(HkRecord r) {
-        String document = r.getDoc();
+    private static String getPartnerForOrder(HkRecord record) {
+        String document = record.getDoc();
         if (document.contains("Расх. накл. ХК-") || document.contains("Возвратная накл. ХК-")) {
-            return ReadFromExcel.getDocRecordMap().get(document + Helper.DELIMITER + r.getDate().toString());
+            return ReadFromExcel.getDocRecordMap().get(document + DELIMITER + record.getDate().toString());
         }
         if (document.contains("Кальк. ХК-")) {
             return "Цех";

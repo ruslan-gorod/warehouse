@@ -11,18 +11,20 @@ import java.util.List;
 
 public class WorkWithDB {
     public static void writeRecords(List<HkRecord> records) {
-        for (HkRecord record : records) {
-            Transaction transaction = null;
-            try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-                transaction = session.beginTransaction();
-                session.save(record);
-                transaction.commit();
-            } catch (Exception e) {
-                if (transaction != null) {
-                    transaction.rollback();
-                }
-                e.printStackTrace();
+        records.forEach(WorkWithDB::saveRecord);
+    }
+
+    private static void saveRecord(HkRecord record) {
+        Transaction transaction = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            transaction = session.beginTransaction();
+            session.save(record);
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
             }
+            e.printStackTrace();
         }
     }
 
@@ -32,7 +34,6 @@ public class WorkWithDB {
             session.setDefaultReadOnly(true);
             String query = "SELECT " + value + "(r.date) FROM HkRecord r";
             List results = session.createQuery(query).list();
-
             if (results != null && !results.isEmpty()) {
                 date = (LocalDate) results.get(0);
             }
@@ -53,6 +54,5 @@ public class WorkWithDB {
         query.setParameter("product", product);
 
         return query.list();
-
     }
 }

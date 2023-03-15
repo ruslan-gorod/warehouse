@@ -19,14 +19,14 @@ import java.util.Set;
 
 import static org.hk.util.Helper.DELIMITER;
 import static org.hk.util.Helper.deleteFile;
-import static org.hk.util.Helper.dir;
-import static org.hk.util.Helper.rah25;
-import static org.hk.util.Helper.rah26;
-import static org.hk.util.Helper.rah36;
-import static org.hk.util.Helper.rah704;
-import static org.hk.util.Helper.rah901;
+import static org.hk.util.Helper.DIR;
+import static org.hk.util.Helper.RAH_25;
+import static org.hk.util.Helper.RAH_26;
+import static org.hk.util.Helper.RAH_36;
+import static org.hk.util.Helper.RAH_704;
+import static org.hk.util.Helper.RAH_901;
 import static org.hk.util.Helper.round;
-import static org.hk.util.Helper.warehouse;
+import static org.hk.util.Helper.WAREHOUSE;
 
 
 public class ReadFromExcel {
@@ -38,10 +38,7 @@ public class ReadFromExcel {
 
     public static List<HkRecord> read() {
         assert files != null;
-        for (File f : files) {
-            processFile(f);
-        }
-
+        Arrays.stream(files).forEach(ReadFromExcel::processFile);
         return records;
     }
 
@@ -59,9 +56,9 @@ public class ReadFromExcel {
 
     private static void processFile(File file) {
         String fileName = file.getName();
-        if (file.isDirectory() && fileName.equals(dir)) {
+        if (file.isDirectory() && fileName.equals(DIR)) {
             deleteFile(file);
-            File saveDir = new File("./" + dir);
+            File saveDir = new File("./" + DIR);
             saveDir.mkdir();
         }
         if (fileName.contains("start_count")) {
@@ -102,12 +99,12 @@ public class ReadFromExcel {
     }
 
     private static void createRecord(Row r) {
-        HkRecord record = getHkRecord(r);
+        HkRecord record = createHkRecord(r);
 
         String dt = record.getDt();
         String kt = record.getKt();
-        if ((rah26.equals(dt) || rah26.equals(kt)) && record.getCount() != 0) {
-            if (rah26.equals(kt)) {
+        if ((RAH_26.equals(dt) || RAH_26.equals(kt)) && record.getCount() != 0) {
+            if (RAH_26.equals(kt)) {
                 record.setDateTime(record.getDateTime().plusSeconds(10));
             }
             records.add(record);
@@ -120,15 +117,15 @@ public class ReadFromExcel {
 
     private static void createDocRecordMap(HkRecord record, String dt, String kt) {
         String doc = record.getDoc() + DELIMITER + record.getDate();
-        if (dt.contains(rah36)) {
+        if (dt.contains(RAH_36)) {
             docRecordMap.put(doc, record.getContent1());
         }
-        if (kt.contains(rah36) && dt.contains(rah704)) {
+        if (kt.contains(RAH_36) && dt.contains(RAH_704)) {
             docRecordMap.put(doc, record.getContent4());
         }
     }
 
-    private static HkRecord getHkRecord(Row r) {
+    private static HkRecord createHkRecord(Row r) {
         LocalDate date = LocalDate.parse(r.getCell(0).getStringCellValue(),
                 DateTimeFormatter.ofPattern("dd.MM.yy"));
         String dt = r.getCell(3).getStringCellValue();
@@ -140,10 +137,10 @@ public class ReadFromExcel {
                 r.getCell(5).getNumericCellValue() : 0;
         String[] arr = r.getCell(2).getStringCellValue().split("\n");
 
-        String warehouseFrom = rah26.equals(dt) && rah26.equals(kt) && warehouse.equals(arr[1]) ?
-                warehouse : null;
-        String warehouseTo = rah26.equals(dt) && rah26.equals(kt) && warehouse.equals(arr[4]) ?
-                warehouse : null;
+        String warehouseFrom = RAH_26.equals(dt) && RAH_26.equals(kt) && WAREHOUSE.equals(arr[1]) ?
+                WAREHOUSE : null;
+        String warehouseTo = RAH_26.equals(dt) && RAH_26.equals(kt) && WAREHOUSE.equals(arr[4]) ?
+                WAREHOUSE : null;
         boolean isBladder = checkIsBladder(arr);
 
         return HkRecord.builder().doc(r.getCell(1).getStringCellValue())
@@ -164,13 +161,13 @@ public class ReadFromExcel {
 
     private static String getProductFromRow(String[] arr, boolean isBladder, String dt, String kt) {
         String product = null;
-        if (rah26.equals(dt) && !rah26.equals(kt) && warehouse.equals(arr[1])) {
+        if (RAH_26.equals(dt) && !RAH_26.equals(kt) && WAREHOUSE.equals(arr[1])) {
             product = arr[2];
         }
-        if (rah26.equals(kt)) {
-            if ((rah901.equals(dt) || (rah25.equals(dt) && isBladder)) && warehouse.equals(arr[4])) {
+        if (RAH_26.equals(kt)) {
+            if ((RAH_901.equals(dt) || (RAH_25.equals(dt) && isBladder)) && WAREHOUSE.equals(arr[4])) {
                 product = arr[5];
-            } else if (rah26.equals(dt) && (warehouse.equals(arr[4]) || warehouse.equals(arr[1]))) {
+            } else if (RAH_26.equals(dt) && (WAREHOUSE.equals(arr[4]) || WAREHOUSE.equals(arr[1]))) {
                 if (!arr[2].equals(arr[5])) {
                     product = arr[2];
                 } else {
