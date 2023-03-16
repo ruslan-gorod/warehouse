@@ -19,11 +19,12 @@ public class Helper {
     public static final String RAH_26 = "26";
     public static final String RAH_281 = "281";
     public static final String RAH_36 = "36";
+    public static final String RAH_63 = "63";
     public static final String RAH_704 = "704";
     public static final String RAH_901 = "901";
     public static final String WAREHOUSE = "Склад готової продукції Х";
     private static final List<HkRecord> listRecordsMinusZal = new ArrayList<>();
-    public static final boolean isReportByYears = false;
+    public static final boolean isReportByYears = true;
 
     public static void initMonthNames() {
         monthsNames.put(1, "січень");

@@ -20,7 +20,7 @@ public class App {
         List<HkRecord> records = ReadFromExcel.read();
         System.out.println("records.size = " + records.size());
         Set<String> products = ReadFromExcel.getProductValues();
-        System.out.println("products.size =" + products.size());
+        System.out.println("products.size = " + products.size());
         WorkWithDB.writeRecords(records);
 
         WriteToExcel.write(products);

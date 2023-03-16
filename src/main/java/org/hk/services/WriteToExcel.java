@@ -350,7 +350,9 @@ public class WriteToExcel {
 
     private static String getPartnerForOrder(HkRecord record) {
         String document = record.getDoc();
-        if (document.contains("Расх. накл. ХК-") || document.contains("Возвратная накл. ХК-")) {
+        if (document.contains("Расх. накл. ХК-")
+                || document.contains("Возвратная накл. ХК-")
+                || document.contains("Прих. накл. ХК-")) {
             return ReadFromExcel.getDocRecordMap().get(document + DELIMITER + record.getDate().toString());
         }
         if (document.contains("Кальк. ХК-")) {

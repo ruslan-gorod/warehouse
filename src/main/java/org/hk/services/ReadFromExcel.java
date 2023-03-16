@@ -22,6 +22,7 @@ import static org.hk.util.Helper.RAH_25;
 import static org.hk.util.Helper.RAH_26;
 import static org.hk.util.Helper.RAH_281;
 import static org.hk.util.Helper.RAH_36;
+import static org.hk.util.Helper.RAH_63;
 import static org.hk.util.Helper.RAH_704;
 import static org.hk.util.Helper.RAH_901;
 import static org.hk.util.Helper.WAREHOUSE;
@@ -115,7 +116,7 @@ public class ReadFromExcel {
         if (dt.contains(RAH_36)) {
             docRecordMap.put(doc, record.getContent1());
         }
-        if (kt.contains(RAH_36) && dt.contains(RAH_704)) {
+        if ((kt.contains(RAH_36) && dt.contains(RAH_704)) || (dt.contains(RAH_281) && kt.contains(RAH_63))) {
             docRecordMap.put(doc, record.getContent4());
         }
     }
@@ -174,6 +175,9 @@ public class ReadFromExcel {
                     product = arr[5];
                 }
             }
+        }
+        if (RAH_281.equals(kt) && WAREHOUSE.equals(arr[4])) {
+            product = arr[2];
         }
         return product;
     }
