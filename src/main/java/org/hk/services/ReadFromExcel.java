@@ -20,6 +20,7 @@ import java.util.Set;
 import static org.hk.util.Helper.DELIMITER;
 import static org.hk.util.Helper.RAH_25;
 import static org.hk.util.Helper.RAH_26;
+import static org.hk.util.Helper.RAH_281;
 import static org.hk.util.Helper.RAH_36;
 import static org.hk.util.Helper.RAH_704;
 import static org.hk.util.Helper.RAH_901;
@@ -96,8 +97,9 @@ public class ReadFromExcel {
 
         String dt = record.getDt();
         String kt = record.getKt();
-        if ((RAH_26.equals(dt) || RAH_26.equals(kt)) && record.getCount() != 0) {
-            if (RAH_26.equals(kt)) {
+        if ((RAH_26.equals(dt) || RAH_26.equals(kt) || RAH_281.equals(dt) || RAH_281.equals(kt))
+                && record.getCount() != 0) {
+            if (RAH_26.equals(kt) || RAH_281.equals(kt)) {
                 record.setDateTime(record.getDateTime().plusSeconds(10));
             }
             records.add(record);
@@ -130,10 +132,12 @@ public class ReadFromExcel {
                 r.getCell(5).getNumericCellValue() : 0;
         String[] arr = r.getCell(2).getStringCellValue().split("\n");
 
-        String warehouseFrom = RAH_26.equals(dt) && RAH_26.equals(kt) && WAREHOUSE.equals(arr[1]) ?
-                WAREHOUSE : null;
-        String warehouseTo = RAH_26.equals(dt) && RAH_26.equals(kt) && WAREHOUSE.equals(arr[4]) ?
-                WAREHOUSE : null;
+        String warehouseFrom = (RAH_26.equals(dt) && RAH_26.equals(kt) && WAREHOUSE.equals(arr[1])) ||
+                (RAH_281.equals(dt) && WAREHOUSE.equals(arr[1]))
+                ? WAREHOUSE : null;
+        String warehouseTo = RAH_26.equals(dt) && RAH_26.equals(kt) && WAREHOUSE.equals(arr[4]) ||
+                (RAH_281.equals(kt) && WAREHOUSE.equals(arr[4]))
+                ? WAREHOUSE : null;
         boolean isBladder = checkIsBladder(arr);
 
         return HkRecord.builder().doc(r.getCell(1).getStringCellValue())
@@ -155,6 +159,9 @@ public class ReadFromExcel {
     private static String getProductFromRow(String[] arr, boolean isBladder, String dt, String kt) {
         String product = null;
         if (RAH_26.equals(dt) && !RAH_26.equals(kt) && WAREHOUSE.equals(arr[1])) {
+            product = arr[2];
+        }
+        if ((RAH_281.equals(dt) || RAH_281.equals(kt)) && WAREHOUSE.equals(arr[1])) {
             product = arr[2];
         }
         if (RAH_26.equals(kt)) {

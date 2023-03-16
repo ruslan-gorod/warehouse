@@ -17,6 +17,7 @@ public class Helper {
     public static final String DIR_YEARS = "reports_years";
     public static final String RAH_25 = "25";
     public static final String RAH_26 = "26";
+    public static final String RAH_281 = "281";
     public static final String RAH_36 = "36";
     public static final String RAH_704 = "704";
     public static final String RAH_901 = "901";

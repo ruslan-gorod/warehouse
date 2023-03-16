@@ -31,6 +31,7 @@ import static org.hk.util.Helper.DIR;
 import static org.hk.util.Helper.DIR_YEARS;
 import static org.hk.util.Helper.RAH_25;
 import static org.hk.util.Helper.RAH_26;
+import static org.hk.util.Helper.RAH_281;
 import static org.hk.util.Helper.deleteFile;
 import static org.hk.util.Helper.getListRecordsMinusZal;
 import static org.hk.util.Helper.getMonthsNames;
@@ -240,6 +241,11 @@ public class WriteToExcel {
                 zal += round(count, 2);
                 operation.setIn(operation.getIn() + count);
             }
+            if (RAH_281.equals(dt) && !RAH_281.equals(kt)) {
+                cellIn.setCellValue(count);
+                zal += round(count, 2);
+                operation.setIn(operation.getIn() + count);
+            }
             cellIn.setCellStyle(style);
 
             Cell cellOut = row.createCell(5);
@@ -270,6 +276,11 @@ public class WriteToExcel {
                     zal -= round(count, 2);
                     operation.setOut(operation.getOut() + count);
                 }
+            }
+            if (RAH_281.equals(kt)) {
+                cellOut.setCellValue(count);
+                zal -= round(count, 2);
+                operation.setOut(operation.getOut() + count);
             }
             cellOut.setCellStyle(style);
 
