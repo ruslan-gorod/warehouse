@@ -23,8 +23,10 @@ import static org.hk.util.Helper.RAH_26;
 import static org.hk.util.Helper.RAH_281;
 import static org.hk.util.Helper.RAH_36;
 import static org.hk.util.Helper.RAH_63;
+import static org.hk.util.Helper.RAH_702;
 import static org.hk.util.Helper.RAH_704;
 import static org.hk.util.Helper.RAH_901;
+import static org.hk.util.Helper.RAH_902;
 import static org.hk.util.Helper.WAREHOUSE;
 import static org.hk.util.Helper.round;
 
@@ -116,7 +118,9 @@ public class ReadFromExcel {
         if (dt.contains(RAH_36)) {
             docRecordMap.put(doc, record.getContent1());
         }
-        if ((kt.contains(RAH_36) && dt.contains(RAH_704)) || (dt.contains(RAH_281) && kt.contains(RAH_63))) {
+        if ((kt.contains(RAH_36) && dt.contains(RAH_704))
+                || (kt.contains(RAH_36) && dt.contains(RAH_702))
+                || (dt.contains(RAH_281) && kt.contains(RAH_63))) {
             docRecordMap.put(doc, record.getContent4());
         }
     }
@@ -177,7 +181,13 @@ public class ReadFromExcel {
             }
         }
         if (RAH_281.equals(kt) && WAREHOUSE.equals(arr[4])) {
-            product = arr[2];
+            if (RAH_902.equals(dt)) {
+                product = arr[3];
+            } else if (RAH_25.equals(dt)) {
+                product = arr[5];
+            } else {
+                product = arr[2];
+            }
         }
         return product;
     }
