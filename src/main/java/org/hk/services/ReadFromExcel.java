@@ -126,67 +126,84 @@ public class ReadFromExcel {
     }
 
     private static HkRecord createHkRecord(Row r) {
-        LocalDate date = LocalDate.parse(r.getCell(0).getStringCellValue(),
-                DateTimeFormatter.ofPattern("dd.MM.yy"));
+        LocalDate date = getRecordLocalDate(r);
         String dt = r.getCell(3).getStringCellValue();
         String kt = r.getCell(4).getStringCellValue();
-        double count = r.getCell(6).toString().trim().length() > 0 ?
-                r.getCell(6).getNumericCellValue() : 0;
-
-        double sum = r.getCell(5).toString().trim().length() > 0 ?
-                r.getCell(5).getNumericCellValue() : 0;
-        String[] arr = r.getCell(2).getStringCellValue().split("\n");
-
-        String warehouseFrom = (RAH_26.equals(dt) && RAH_26.equals(kt) && WAREHOUSE.equals(arr[1])) ||
-                (RAH_281.equals(dt) && WAREHOUSE.equals(arr[1]))
-                ? WAREHOUSE : null;
-        String warehouseTo = RAH_26.equals(dt) && RAH_26.equals(kt) && WAREHOUSE.equals(arr[4]) ||
-                (RAH_281.equals(kt) && WAREHOUSE.equals(arr[4]))
-                ? WAREHOUSE : null;
-        boolean isBladder = checkIsBladder(arr);
+        String[] recordContent = r.getCell(2).getStringCellValue().split("\n");
+        boolean isBladder = checkIsBladder(recordContent);
 
         return HkRecord.builder().doc(r.getCell(1).getStringCellValue())
                 .date(date).dateTime(date.atTime(0, 0))
-                .warehouseFrom(warehouseFrom).warehouseTo(warehouseTo)
-                .product(getProductFromRow(arr, isBladder, dt, kt))
-                .content1(arr.length > 1 ? arr[1] : null)
-                .content4(arr.length > 5 ? arr[4] : null)
+                .warehouseFrom(getWarehouseFrom(dt, kt, recordContent))
+                .warehouseTo(getWarehouseTo(dt, kt, recordContent))
+                .product(getProductFromRow(recordContent, isBladder, dt, kt))
+                .content1(getContentByLength(recordContent, 1, 1))
+                .content4(getContentByLength(recordContent, 5, 4))
                 .dt(dt).kt(kt)
-                .count(count).sum(sum)
+                .count(getCount(r)).sum(getRecordSum(r))
                 .isBladder(isBladder)
                 .build();
     }
 
-    private static boolean checkIsBladder(String[] arr) {
-        return Arrays.stream(arr).anyMatch(s -> s.contains("міхур"));
+    private static LocalDate getRecordLocalDate(Row r) {
+        return LocalDate.parse(r.getCell(0).getStringCellValue(),
+                DateTimeFormatter.ofPattern("dd.MM.yy"));
     }
 
-    private static String getProductFromRow(String[] arr, boolean isBladder, String dt, String kt) {
+    private static double getRecordSum(Row r) {
+        return r.getCell(5).toString().trim().length() > 0 ?
+                r.getCell(5).getNumericCellValue() : 0;
+    }
+
+    private static double getCount(Row r) {
+        return r.getCell(6).toString().trim().length() > 0 ?
+                r.getCell(6).getNumericCellValue() : 0;
+    }
+
+    private static String getContentByLength(String[] recordContent, int length, int position) {
+        return recordContent.length > length ? recordContent[position] : null;
+    }
+
+    private static String getWarehouseTo(String dt, String kt, String[] recordContent) {
+        return RAH_26.equals(dt) && RAH_26.equals(kt) && WAREHOUSE.equals(recordContent[4]) ||
+                (RAH_281.equals(kt) && WAREHOUSE.equals(recordContent[4])) ? WAREHOUSE : null;
+    }
+
+    private static String getWarehouseFrom(String dt, String kt, String[] recordContent) {
+        return (RAH_26.equals(dt) && RAH_26.equals(kt) && WAREHOUSE.equals(recordContent[1])) ||
+                (RAH_281.equals(dt) && WAREHOUSE.equals(recordContent[1])) ? WAREHOUSE : null;
+    }
+
+    private static boolean checkIsBladder(String[] recordContent) {
+        return Arrays.stream(recordContent).anyMatch(s -> s.contains("міхур"));
+    }
+
+    private static String getProductFromRow(String[] recordContent, boolean isBladder, String dt, String kt) {
         String product = null;
-        if (RAH_26.equals(dt) && !RAH_26.equals(kt) && WAREHOUSE.equals(arr[1])) {
-            product = arr[2];
+        if (RAH_26.equals(dt) && !RAH_26.equals(kt) && WAREHOUSE.equals(recordContent[1])) {
+            product = recordContent[2];
         }
-        if ((RAH_281.equals(dt) || RAH_281.equals(kt)) && WAREHOUSE.equals(arr[1])) {
-            product = arr[2];
+        if ((RAH_281.equals(dt) || RAH_281.equals(kt)) && WAREHOUSE.equals(recordContent[1])) {
+            product = recordContent[2];
         }
         if (RAH_26.equals(kt)) {
-            if ((RAH_901.equals(dt) || (RAH_25.equals(dt) && isBladder)) && WAREHOUSE.equals(arr[4])) {
-                product = arr[5];
-            } else if (RAH_26.equals(dt) && (WAREHOUSE.equals(arr[4]) || WAREHOUSE.equals(arr[1]))) {
-                if (!arr[2].equals(arr[5])) {
-                    product = arr[2];
+            if ((RAH_901.equals(dt) || (RAH_25.equals(dt) && isBladder)) && WAREHOUSE.equals(recordContent[4])) {
+                product = recordContent[5];
+            } else if (RAH_26.equals(dt) && (WAREHOUSE.equals(recordContent[4]) || WAREHOUSE.equals(recordContent[1]))) {
+                if (!recordContent[2].equals(recordContent[5])) {
+                    product = recordContent[2];
                 } else {
-                    product = arr[5];
+                    product = recordContent[5];
                 }
             }
         }
-        if (RAH_281.equals(kt) && WAREHOUSE.equals(arr[4])) {
+        if (RAH_281.equals(kt) && WAREHOUSE.equals(recordContent[4])) {
             if (RAH_902.equals(dt)) {
-                product = arr[3];
+                product = recordContent[3];
             } else if (RAH_25.equals(dt)) {
-                product = arr[5];
+                product = recordContent[5];
             } else {
-                product = arr[2];
+                product = recordContent[2];
             }
         }
         return product;

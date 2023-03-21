@@ -235,6 +235,8 @@ public class WriteToExcel {
             cellPartner.setCellStyle(style);
 
             Cell cellIn = row.createCell(4);
+            Cell cellOut = row.createCell(5);
+
             double zal = operation.getResult();
             if (RAH_26.equals(dt) && !RAH_26.equals(kt)) {
                 cellIn.setCellValue(count);
@@ -246,9 +248,7 @@ public class WriteToExcel {
                 zal += round(count, 2);
                 operation.setIn(operation.getIn() + count);
             }
-            cellIn.setCellStyle(style);
 
-            Cell cellOut = row.createCell(5);
             if (RAH_26.equals(kt) && !RAH_26.equals(dt) && !RAH_25.equals(dt)) {
                 if (count < 0) {
                     count = count * (-1);
@@ -282,6 +282,8 @@ public class WriteToExcel {
                 zal -= round(count, 2);
                 operation.setOut(operation.getOut() + count);
             }
+
+            cellIn.setCellStyle(style);
             cellOut.setCellStyle(style);
 
             if (zal < 0) {
