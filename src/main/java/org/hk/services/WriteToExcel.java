@@ -39,6 +39,10 @@ import static org.hk.util.Helper.isReportByYears;
 import static org.hk.util.Helper.round;
 
 public class WriteToExcel {
+    private static final String SPACE = " ";
+    private static final String UNDERSCORE = "_";
+    private static final String SUFFIX = ".xlsx";
+    private static final String FILE_SEPARATOR = "/";
 
     public static void write(Set<String> products) {
         if (isReportByYears) {
@@ -100,17 +104,17 @@ public class WriteToExcel {
     }
 
     private static File getFileReportToSave(int year, int month, String product) {
-        String folderName = DIR + "/" + product.replace("/", " ")
-                .replace(" ", "_") + "/" + year;
+        String folderName = DIR + FILE_SEPARATOR + product.replace(FILE_SEPARATOR, SPACE)
+                .replace(SPACE, UNDERSCORE) + FILE_SEPARATOR + year;
         createReportFolder(folderName);
-        return new File(folderName + "/" + month + ".xlsx");
+        return new File(folderName + FILE_SEPARATOR + month + SUFFIX);
     }
 
     private static File getFileReportToSaveByYears(int year, int month, String product) {
-        String folderName = DIR_YEARS + "/" + year + "/" + month;
-        String fileName = product.replace("/", " ").replace(" ", "_");
+        String folderName = DIR_YEARS + FILE_SEPARATOR + year + FILE_SEPARATOR + month;
+        String fileName = product.replace(FILE_SEPARATOR, SPACE).replace(SPACE, UNDERSCORE);
         createReportFolder(folderName);
-        return new File(folderName + "/" + fileName + ".xlsx");
+        return new File(folderName + FILE_SEPARATOR + fileName + SUFFIX);
     }
 
     private static void createReportFolder(String folderName) {
@@ -147,7 +151,7 @@ public class WriteToExcel {
 
         Row row3 = sheet.createRow(3);
         Cell cell30 = row3.createCell(0);
-        cell30.setCellValue("за " + getMonthsNames().get(month) + " " + year + "р.");
+        cell30.setCellValue("за " + getMonthsNames().get(month) + SPACE + year + "р.");
         CellStyle styleCenter30 = cell30.getSheet().getWorkbook().createCellStyle();
         setCenterInStyle(styleCenter30);
         Font font30 = cell30.getSheet().getWorkbook().createFont();

@@ -4,6 +4,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.hk.models.HkRecord;
+import org.hk.models.HkRecordMainValue;
 
 import java.io.File;
 import java.io.IOException;
@@ -126,23 +127,38 @@ public class ReadFromExcel {
     }
 
     private static HkRecord createHkRecord(Row r) {
-        LocalDate date = getRecordLocalDate(r);
-        String dt = r.getCell(3).getStringCellValue();
-        String kt = r.getCell(4).getStringCellValue();
-        String[] recordContent = r.getCell(2).getStringCellValue().split("\n");
-        boolean isBladder = checkIsBladder(recordContent);
+        HkRecordMainValue value = createHkRecordMainValue(r);
 
-        return HkRecord.builder().doc(r.getCell(1).getStringCellValue())
-                .date(date).dateTime(date.atTime(0, 0))
-                .warehouseFrom(getWarehouseFrom(dt, kt, recordContent))
-                .warehouseTo(getWarehouseTo(dt, kt, recordContent))
-                .product(getProductFromRow(recordContent, isBladder, dt, kt))
-                .content1(getContentByLength(recordContent, 1, 1))
-                .content4(getContentByLength(recordContent, 5, 4))
-                .dt(dt).kt(kt)
-                .count(getCount(r)).sum(getRecordSum(r))
-                .isBladder(isBladder)
+        return HkRecord.builder()
+                .dt(value.getDt())
+                .kt(value.getKt())
+                .count(getCount(r))
+                .sum(getRecordSum(r))
+                .date(value.getDate())
+                .dateTime(value.getDate().atTime(0, 0))
+                .content1(getContentByLength(value, 1, 1))
+                .content4(getContentByLength(value, 5, 4))
+                .doc(getStringCellValueByPosition(r, 1))
+                .warehouseFrom(getWarehouseFrom(value))
+                .warehouseTo(getWarehouseTo(value))
+                .product(getProductFromRow(value))
+                .isBladder(value.isBladder())
                 .build();
+    }
+
+    private static HkRecordMainValue createHkRecordMainValue(Row r) {
+        String[] recordContent = getStringCellValueByPosition(r, 2).split("\n");
+        return HkRecordMainValue.builder()
+                .date(getRecordLocalDate(r))
+                .recordContent(recordContent)
+                .isBladder(checkIsBladder(recordContent))
+                .dt(getStringCellValueByPosition(r, 3))
+                .kt(getStringCellValueByPosition(r, 4))
+                .build();
+    }
+
+    private static String getStringCellValueByPosition(Row r, int position) {
+        return r.getCell(position).getStringCellValue();
     }
 
     private static LocalDate getRecordLocalDate(Row r) {
@@ -151,61 +167,73 @@ public class ReadFromExcel {
     }
 
     private static double getRecordSum(Row r) {
-        return r.getCell(5).toString().trim().length() > 0 ?
-                r.getCell(5).getNumericCellValue() : 0;
+        return getaDoubleValueByPosition(r, 5);
     }
 
     private static double getCount(Row r) {
-        return r.getCell(6).toString().trim().length() > 0 ?
-                r.getCell(6).getNumericCellValue() : 0;
+        return getaDoubleValueByPosition(r, 6);
     }
 
-    private static String getContentByLength(String[] recordContent, int length, int position) {
-        return recordContent.length > length ? recordContent[position] : null;
+    private static double getaDoubleValueByPosition(Row r, int position) {
+        return r.getCell(position).toString().trim().length() > 0 ?
+                r.getCell(position).getNumericCellValue() : 0;
     }
 
-    private static String getWarehouseTo(String dt, String kt, String[] recordContent) {
-        return RAH_26.equals(dt) && RAH_26.equals(kt) && WAREHOUSE.equals(recordContent[4]) ||
-                (RAH_281.equals(kt) && WAREHOUSE.equals(recordContent[4])) ? WAREHOUSE : null;
+    private static String getContentByLength(HkRecordMainValue value, int length, int position) {
+        return value.getRecordContent().length > length ? value.getRecordContent()[position] : null;
     }
 
-    private static String getWarehouseFrom(String dt, String kt, String[] recordContent) {
-        return (RAH_26.equals(dt) && RAH_26.equals(kt) && WAREHOUSE.equals(recordContent[1])) ||
-                (RAH_281.equals(dt) && WAREHOUSE.equals(recordContent[1])) ? WAREHOUSE : null;
+    private static String getWarehouseFrom(HkRecordMainValue value) {
+        return getWarehouseByPosition(value, 1);
+    }
+
+    private static String getWarehouseTo(HkRecordMainValue value) {
+        return getWarehouseByPosition(value, 4);
+    }
+
+    private static String getWarehouseByPosition(HkRecordMainValue value, int position) {
+        String dt = value.getDt();
+        String kt = value.getKt();
+        return (RAH_26.equals(dt) && RAH_26.equals(kt) && isWarehouseCorrect(value, position)) ||
+                (RAH_281.equals(dt) && isWarehouseCorrect(value, position)) ? WAREHOUSE : null;
+    }
+
+    private static boolean isWarehouseCorrect(HkRecordMainValue value, int position) {
+        return WAREHOUSE.equals(value.getRecordContent()[position]);
     }
 
     private static boolean checkIsBladder(String[] recordContent) {
         return Arrays.stream(recordContent).anyMatch(s -> s.contains("міхур"));
     }
 
-    private static String getProductFromRow(String[] recordContent, boolean isBladder, String dt, String kt) {
-        String product = null;
-        if (RAH_26.equals(dt) && !RAH_26.equals(kt) && WAREHOUSE.equals(recordContent[1])) {
-            product = recordContent[2];
+    private static String getProductFromRow(HkRecordMainValue value) {
+        String dt = value.getDt();
+        String kt = value.getKt();
+        String[] recordContent = value.getRecordContent();
+        int position = 0;
+        if (RAH_26.equals(dt) && !RAH_26.equals(kt) && isWarehouseCorrect(value, 1)) {
+            position = 2;
         }
-        if ((RAH_281.equals(dt) || RAH_281.equals(kt)) && WAREHOUSE.equals(recordContent[1])) {
-            product = recordContent[2];
+        if ((RAH_281.equals(dt) || RAH_281.equals(kt)) && isWarehouseCorrect(value, 1)) {
+            position = 2;
         }
         if (RAH_26.equals(kt)) {
-            if ((RAH_901.equals(dt) || (RAH_25.equals(dt) && isBladder)) && WAREHOUSE.equals(recordContent[4])) {
-                product = recordContent[5];
-            } else if (RAH_26.equals(dt) && (WAREHOUSE.equals(recordContent[4]) || WAREHOUSE.equals(recordContent[1]))) {
-                if (!recordContent[2].equals(recordContent[5])) {
-                    product = recordContent[2];
-                } else {
-                    product = recordContent[5];
-                }
+            if ((RAH_901.equals(dt) || (RAH_25.equals(dt) && value.isBladder())) && isWarehouseCorrect(value, 4)) {
+                position = 5;
+            } else if (RAH_26.equals(dt) && (isWarehouseCorrect(value, 4) || isWarehouseCorrect(value, 1))) {
+                position = !recordContent[2].equals(recordContent[5]) ? 2 : 5;
             }
         }
-        if (RAH_281.equals(kt) && WAREHOUSE.equals(recordContent[4])) {
+
+        if (RAH_281.equals(kt) && isWarehouseCorrect(value, 4)) {
             if (RAH_902.equals(dt)) {
-                product = recordContent[3];
+                position = 3;
             } else if (RAH_25.equals(dt)) {
-                product = recordContent[5];
+                position = 5;
             } else {
-                product = recordContent[2];
+                position = 2;
             }
         }
-        return product;
+        return position > 0 ? recordContent[position] : null;
     }
 }
